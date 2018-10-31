@@ -766,6 +766,43 @@ def add_evaluation_step(result_tensor, ground_truth_tensor):
   tf.summary.scalar('accuracy', evaluation_step)
   return evaluation_step, prediction
 
+def export_model(sess, keys, architecture, saved_model_dir):
+  """Exports model for serving.
+  Args:
+    sess: Current active TensorFlow Session.
+    architecture: Model architecture.
+    saved_model_dir: Directory in which to save exported model and variables.
+  """
+  if architecture == 'inception_v3':
+    input_tensor = 'DecodeJpeg/contents:0'
+  elif architecture.startswith('mobilenet_'):
+    input_tensor = 'input:0'
+  else:
+    raise ValueError('Unknown architecture', architecture)
+  in_image = sess.graph.get_tensor_by_name(input_tensor)
+  inputs = {'image': tf.saved_model.utils.build_tensor_info(in_image)}
+
+  out_classes = sess.graph.get_tensor_by_name('final_result:0')
+  outputs = {'prediction': tf.saved_model.utils.build_tensor_info(out_classes),
+             'classes': tf.saved_model.utils.build_tensor_info(tf.convert_to_tensor(list(keys))),}
+
+  signature = tf.saved_model.signature_def_utils.build_signature_def(
+      inputs=inputs,
+      outputs=outputs,
+      method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME)
+
+  legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
+
+  # Save out the SavedModel.
+  builder = tf.saved_model.builder.SavedModelBuilder(saved_model_dir)
+  builder.add_meta_graph_and_variables(
+      sess, [tf.saved_model.tag_constants.SERVING],
+      signature_def_map={
+          tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: 
+          signature
+      },
+      legacy_init_op=legacy_init_op)
+  builder.save()
 
 def main(_):
   # Setup the directory we'll write summaries to for TensorBoard
@@ -904,6 +941,7 @@ def main(_):
   with gfile.FastGFile(FLAGS.output_labels, 'w') as f:
     f.write('\n'.join(image_lists.keys()) + '\n')
 
+  export_model(sess, image_lists.keys(), FLAGS.architecture, FLAGS.saved_model_dir)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -1057,6 +1095,26 @@ if __name__ == '__main__':
       A percentage determining how much to randomly multiply the training image
       input pixels up or down by.\
       """
+  )
+  parser.add_argument(
+      '--architecture',
+      type=str,
+      default='inception_v3',
+      help="""\
+      Which model architecture to use. 'inception_v3' is the most accurate, but
+      also the slowest. For faster or smaller models, chose a MobileNet with the
+      form 'mobilenet_<parameter size>_<input_size>[_quantized]'. For example,
+      'mobilenet_1.0_224' will pick a model that is 17 MB in size and takes 224
+      pixel input images, while 'mobilenet_0.25_128_quantized' will choose a much
+      less accurate, but smaller and faster network that's 920 KB on disk and
+      takes 128x128 images. See https://research.googleblog.com/2017/06/mobilenets-open-source-models-for.html
+      for more information on Mobilenet.\
+      """)
+  parser.add_argument(
+      '--saved_model_dir',
+      type=str,
+      default='/tmp/saved_models/1/',
+      help='Where to save the exported graph.'
   )
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
