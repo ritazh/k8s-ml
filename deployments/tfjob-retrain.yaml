@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: disk-retrain
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-standard
+  resources:
+    requests:
+      storage: 8Gi
+---
+apiVersion: kubeflow.org/v1alpha2
+kind: TFJob
+metadata:
+  name: tfjob-retrain
+spec:
+  tfReplicaSpecs:
+    MASTER:
+      replicas: 1
+      template:
+        spec:
+          containers:
+            - image: ritazh/image-retrain-kubecon:1.9-gpu
+              name: tensorflow
+              args:                
+                - "--bottleneck_dir=/tf-output/bottlenecks"
+                - "--model_dir=/tf-output/inception"
+                - "--summaries_dir=/tf-output/training_summaries/baseline"
+                - "--output_graph=/tf-output/retrained_graph.pb"
+                - "--output_labels=/tf-output/retrained_labels.txt"
+                - "--saved_model_dir=/tf-output/saved_models/1"
+                - "--image_dir=images"        
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
+              volumeMounts:
+                - name: disk-retrain
+                  mountPath: /tf-output
+          restartPolicy: OnFailure
+          volumes:
+            - name: disk-retrain
+              persistentVolumeClaim:
+                claimName: disk-retrain

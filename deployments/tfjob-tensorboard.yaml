@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tfjob-tensorboard
+  labels:
+    name: tfjob-tensorboard
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 6006
+  selector:
+    app: tfjob-tensorboard
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: tfjob-tensorboard
+  name: tfjob-tensorboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tfjob-tensorboard
+  template:
+    metadata:
+      labels:
+        app: tfjob-tensorboard
+    spec:
+      volumes:
+        - name: disk-retrain
+          persistentVolumeClaim:
+            claimName: disk-retrain
+      containers:
+        - name: tensorflow
+          image: ritazh/tensorboard:1.9
+          args:                
+            - "--logdir"
+            - "/tf-output/training_summaries"
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tf-output
+              name: disk-retrain
+          ports:
+            - containerPort: 6006
+              protocol: TCP
