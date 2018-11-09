@@ -33,7 +33,7 @@ We have modified the example to retrain inception v3 model to identify a particu
     # run
     docker run --rm -v $PWD/tf-output:/tf-output ritazh/image-retrain-kubecon:1.9-gpu "--how_many_training_steps=4000" "--learning_rate=0.01" "--bottleneck_dir=/tf-output/bottlenecks" "--model_dir=/tf-output/inception" "--summaries_dir=/tf-output/training_summaries/baseline" "--output_graph=/tf-output/retrained_graph.pb" "--output_labels=/tf-output/retrained_labels.txt" "--image_dir=images" "--saved_model_dir=/tf-output/saved_models/1"
     ```
-    [![retrain-tfcontainer](https://img.youtube.com/vi/7Ndx3HKaS5s/0.jpg)](https://www.youtube.com/watch?v=7Ndx3HKaS5s)
+    [![retrain-tfcontainer](recordings/retrain-tfcontainer.png)](https://www.youtube.com/watch?v=7Ndx3HKaS5s)
 
 * Visualize with Tensorboard
     ```bash
@@ -101,13 +101,13 @@ We have modified the example to retrain inception v3 model to identify a particu
         signature_name: "serving_default"
     }
     ```
-    [![tfserving-inference](https://img.youtube.com/vi/t13F33I27TI/0.jpg)](https://www.youtube.com/watch?v=t13F33I27TI)
+    [![tfserving-inference](recordings/tfserving-inference.png)](https://www.youtube.com/watch?v=t13F33I27TI)
 
 ### Provision Immutable Infrastructure with Kubernetes
 
 * Using [acs-engine](https://github.com/Azure/acs-engine) with kubernetes v1.11.4
 
-    [![cluster-gpu](https://img.youtube.com/vi/lvH3ivDrocw/0.jpg)](https://www.youtube.com/watch?v=lvH3ivDrocw)
+    [![cluster-gpu](recordings/cluster-gpu.png)](https://www.youtube.com/watch?v=lvH3ivDrocw)
 
 ### Deploy Machine Learning Components to Kubernetes with Kubeflow
 
@@ -162,7 +162,7 @@ We have modified the example to retrain inception v3 model to identify a particu
     # Check status
     kubectl get pods -n kubeflow
     ```
-    [![kubeflow](https://img.youtube.com/vi/OQvO0pFaeEc/0.jpg)](https://www.youtube.com/watch?v=OQvO0pFaeEc)
+    [![kubeflow](recordings/kubeflow.png)](https://www.youtube.com/watch?v=OQvO0pFaeEc)
 
 ### Persist Data and Logs With Azure Storage
 
@@ -290,9 +290,9 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
     az container list -g <ACI RESOURCE GROUP>
     ```
 
-    [![hyperparam-vk](https://img.youtube.com/vi/EtOuo1dj56c/0.jpg)](https://www.youtube.com/watch?v=EtOuo1dj56c)
+    [![hyperparam-vk-part1](recordings/hyperparam-vk.png)](https://www.youtube.com/watch?v=EtOuo1dj56c)
 
-    ![hyperparam-aci](recordings/hyperparam-aci.png)
+    [![hyperparam-vk-part2](recordings/hyperparam-aci.png)](https://www.youtube.com/watch?v=E1p9bTN-fYc)
 
 ### Creating End to End Pipelines with Argo
 
@@ -381,7 +381,7 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
     kubectl logs ${JOB_NAME}-master-0 -n ${NAMESPACE} 
     ```
 
-    [![workflow-train](https://img.youtube.com/vi/5zJrvWy9srs/0.jpg)](https://www.youtube.com/watch?v=5zJrvWy9srs) 
+    [![workflow-train](recordings/workflow-train.png)](https://www.youtube.com/watch?v=5zJrvWy9srs) 
 
     3. Get Serving IP
 
@@ -484,7 +484,7 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
     }
     ```
 
-    [![workflow-inference](https://img.youtube.com/vi/2P50c-srlkA/0.jpg)](https://www.youtube.com/watch?v=2P50c-srlkA) 
+    [![workflow-inference](recordings/workflow-inference.png)](https://www.youtube.com/watch?v=2P50c-srlkA) 
 
 ### Rapid Prototyping with Self-service Jupyter Notebook from JupyterHub with GitHub OAuth
 
@@ -518,9 +518,13 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
     
     4. Restart the tf-hub-0 pod
 
-    5. Launch JupyterHub from a browser using the external IP from the tf-hub-lb service. Everyone on the team can now create their own Jupyter Notebook instance after signing in with their github account. 
-    ![JupyterHub login](recordings/jupyterhub_login.png)
+    5. Launch JupyterHub from a browser using the external IP from the tf-hub-lb service. Everyone on the team can now create their own Jupyter Notebook instance after signing in with their github account and selecting the resources they need to create their own Jupyter Notebook instance.
+    
+    [![jupyterhub-github](recordings/jupyterhub_login.png)](https://www.youtube.com/watch?v=kGr6mTUEBhs) 
 
-    6. Select the resources you need to create your own Jupyter Notebook instance.
-    ![JupyterHub login](recordings/jupyternotebook_resources.png)
+    6. Start using your own Jupyter Notebook instance to prototype
+
+    [![jupyternotebook](recordings/jupyternotebook.png)](https://www.youtube.com/watch?v=8MTGAT6qsXo) 
+
+
 
