@@ -1,7 +1,7 @@
-argo delete tf-workflow-hjcbq -n tfworkflow
+argo delete tf-workflow-nstdx -n tfworkflow
 
-k delete deploy mnist-myjob-b5e18 -n tfworkflow
-k delete svc mnist-myjob-b5e18 -n tfworkflow
-k delete deploy tensorboard-myjob-b5e18 -n tfworkflow
-k delete svc tensorboard-myjob-b5e18 -n tfworkflow
+k delete svc myjob-d7f5c-master-0 -n tfworkflow
+k delete deploy tensorboard-myjob-d7f5c -n tfworkflow
+k delete svc tensorboard-myjob-d7f5c -n tfworkflow
+k delete deploy inception-myjob-d7f5c -n tfworkflow
 
