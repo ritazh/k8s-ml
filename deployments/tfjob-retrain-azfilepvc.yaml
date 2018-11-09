@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v1alpha2
 kind: TFJob
 metadata:
-  name: tfjob-retrain-azfile
+  name: tfjob-retrain
 spec:
   tfReplicaSpecs:
     MASTER:
@@ -24,11 +24,10 @@ spec:
                   nvidia.com/gpu: 1
               volumeMounts:
                 - name: azure-files
+                  subPath: train1
                   mountPath: /tf-output
           restartPolicy: OnFailure
           volumes:
             - name: azure-files
-              azureFile:
-                secretName: azure-file-secret
-                shareName: data
-                readOnly: false
+              persistentVolumeClaim:
+                claimName: azurefile

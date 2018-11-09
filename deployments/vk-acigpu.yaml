@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ labels:
+   app: samples-tf-mnist-demo
+ name: demo
+ namespace: default
+ annotations:
+   virtual-kubelet.io/gpu-type: K80
+spec:
+ containers:
+ - name: samples-tf-mnist-demo
+   image: microsoft/samples-tf-mnist-demo:gpu
+   command: ["/bin/sh", "-c", "python /app/main.py --max_steps 500"]
+   imagePullPolicy: IfNotPresent
+   resources:
+     limits:
+       nvidia.com/gpu: 1
+     requests:
+       cpu: 5
+       memory: 50G
+ dnsPolicy: Default
+ restartPolicy: OnFailure
+ nodeSelector:
+   beta.kubernetes.io/os: linux
+   kubernetes.io/role: agent
+   type: virtual-kubelet
+ tolerations:
+ - key: virtual-kubelet.io/provider
+   operator: Exists
+ - effect: NoSchedule
+   key: azure.com/aci

@@ -1,16 +1,20 @@
 apiVersion: kubeflow.org/v1alpha2
 kind: TFJob
 metadata:
-  name: tfjob-retrain-azfile
+  name: tfjob-retrain-aci
 spec:
   tfReplicaSpecs:
     MASTER:
       replicas: 1
       template:
+        metadata:
+          annotations:
+            virtual-kubelet.io/gpu-type: K80 # For ACI GPU
         spec:
           containers:
             - image: ritazh/image-retrain-kubecon:1.9-gpu
               name: tensorflow
+              command: ["python", "retrain.py"] # For ACI container group
               args:                
                 - "--bottleneck_dir=/tf-output/bottlenecks"
                 - "--model_dir=/tf-output/inception"
@@ -20,15 +24,29 @@ spec:
                 - "--saved_model_dir=/tf-output/saved_models/1"
                 - "--image_dir=images"        
               resources:
+                requests:
+                  memory: 10G
+                  cpu: 2
                 limits:
                   nvidia.com/gpu: 1
+                  memory: 10G
+                  cpu: 2
               volumeMounts:
-                - name: azure-files
-                  mountPath: /tf-output
+                - mountPath: /tf-output
+                  name: azure-files
           restartPolicy: OnFailure
           volumes:
             - name: azure-files
               azureFile:
                 secretName: azure-file-secret
-                shareName: data
+                shareName: datak80
                 readOnly: false
+          nodeSelector: # For VK
+            kubernetes.io/role: agent
+            beta.kubernetes.io/os: linux
+            type: virtual-kubelet
+          tolerations: # For VK
+          - key: virtual-kubelet.io/provider
+            operator: Exists
+          - key: azure.com/aci
+            effect: NoSchedule

@@ -31,10 +31,8 @@ spec:
     spec:
       volumes:
         - name: azure-files
-          azureFile:
-            secretName: azure-file-secret
-            shareName: data
-            readOnly: false
+          persistentVolumeClaim:
+            claimName: azurefile
       containers:
         - name: tensorflow
           image: ritazh/tensorboard:1.9
@@ -44,6 +42,7 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /tf-output
+              subPath: train1
               name: azure-files
           ports:
             - containerPort: 6006
