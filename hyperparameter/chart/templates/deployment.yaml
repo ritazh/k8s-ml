@@ -1,0 +1,136 @@
+
+# First we copy the values of values.yaml in variable to make it easier to access them
+{{- $lrlist := .Values.hyperParamValues.learning_rate -}}
+{{- $batchsizelist := .Values.hyperParamValues.train_batch_size -}}
+{{- $image := .Values.image -}}
+{{- $useGPU := .Values.useGPU -}}
+{{- $chartname := .Chart.Name -}}
+{{- $chartversion := .Chart.Version -}}
+
+# Then we loop over every value of $lrlist (learning rate) and $batchsize (train batch size)
+# This will result in create 1 TFJob for every pair of learning rate and train batch size
+{{- range $i, $lr := $lrlist }}
+{{- range $j, $batchsize := $batchsizelist }}
+apiVersion: kubeflow.org/v1alpha2
+kind: TFJob # Each one of our trainings will be a separate TFJob
+metadata:
+  name: tfjob-retrain-hyperparam-{{ $i }}-{{ $j }} # We give a unique name to each training
+  labels:
+    chart: "{{ $chartname }}-{{ $chartversion | replace "+" "_" }}"
+spec: 
+  tfReplicaSpecs:
+    MASTER:
+      template:
+        metadata:
+          annotations:
+            virtual-kubelet.io/gpu-type: K80 # For ACI GPU
+        spec:
+          containers:
+            - name: tensorflow
+              image: {{ $image }}
+              command: ["python", "retrain.py"] # For ACI container group
+              args:
+                # Here we pass a unique learning rate and batch size to each instance.
+                # We also put the values between quotes to avoid potential formatting issues    
+                # We save the output in a different directory for each pod
+                - "--bottleneck_dir=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/bottlenecks"
+                - "--model_dir=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/inception"
+                - "--summaries_dir=/tf-output/training_summaries/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/baseline"
+                - "--output_graph=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/retrained_graph.pb"
+                - "--output_labels=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/retrained_labels.txt"
+                - "--saved_model_dir=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/saved_models/1"
+                - "--image_dir=images"
+                - "--learning_rate"
+                - {{ $lr | quote }}
+                - "--train_batch_size"
+                - {{ $batchsize | quote }}
+              resources:
+                requests:
+                  memory: 50G
+                  cpu: 5
+                limits:
+                  memory: 50G
+                  cpu: 5
+{{ if $useGPU }}  # We only want to request GPUs if we asked for it in values.yaml with useGPU
+                  nvidia.com/gpu: 1
+{{ end }}
+              volumeMounts:
+              - mountPath: /tf-output
+                name: azure-files
+          nodeSelector:
+            kubernetes.io/role: agent
+            beta.kubernetes.io/os: linux
+            type: virtual-kubelet
+          tolerations:
+          - key: virtual-kubelet.io/provider
+            operator: Exists
+          - key: azure.com/aci
+            effect: NoSchedule
+          volumes:
+            - name: azure-files
+              azureFile:
+                secretName: azure-file-secret
+                shareName: datavk
+                readOnly: false
+          nodeSelector: # For VK
+            kubernetes.io/role: agent
+            beta.kubernetes.io/os: linux
+            type: virtual-kubelet
+          tolerations: # For VK
+          - key: virtual-kubelet.io/provider
+            operator: Exists
+          - key: azure.com/aci
+            effect: NoSchedule
+---
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: tensorboard-hyperparam-sweep
+  labels:
+    name: tensorboard-hyperparam-sweep
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 6006
+  selector:
+    app: tensorboard-hyperparam-sweep
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: tensorboard-hyperparam-sweep
+  name: tensorboard-hyperparam-sweep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tensorboard-hyperparam-sweep
+  template:
+    metadata:
+      labels:
+        app: tensorboard-hyperparam-sweep
+    spec:
+      volumes:
+        - name: azure-files
+          azureFile:
+            secretName: azure-file-secret
+            shareName: datavk
+            readOnly: false
+      containers:
+        - name: tensorflow
+          image: ritazh/tensorboard:1.9
+          args:                
+            - "--logdir"
+            - "/tf-output/training_summaries"
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tf-output
+              name: azure-files
+          ports:
+            - containerPort: 6006
+              protocol: TCP

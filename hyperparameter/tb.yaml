@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tensorboard-hyperparam-sweep
+  labels:
+    name: tensorboard-hyperparam-sweep
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 6006
+  selector:
+    app: tensorboard-hyperparam-sweep
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: tensorboard-hyperparam-sweep
+  name: tensorboard-hyperparam-sweep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tensorboard-hyperparam-sweep
+  template:
+    metadata:
+      labels:
+        app: tensorboard-hyperparam-sweep
+    spec:
+      volumes:
+        - name: azure-files
+          persistentVolumeClaim:
+            claimName: azurefile
+      containers:
+        - name: tensorflow
+          image: ritazh/tensorboard:1.9
+          args:                
+            - "--logdir"
+            - "/tf-output/training_summaries"
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /tf-output
+              subPath: hyperparam
+              name: azure-files
+          ports:
+            - containerPort: 6006
+              protocol: TCP
