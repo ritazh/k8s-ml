@@ -112,9 +112,9 @@ spec:
     resource:
       action: apply
       # NOTE: need to detect master node complete
-      successCondition: status.tfReplicaStatuses.Master.succeeded == 1
+      successCondition: status.replicaStatuses.Master.succeeded == 1
       manifest: |
-        apiVersion: "kubeflow.org/v1alpha2"
+        apiVersion: "kubeflow.org/v1beta1"
         kind: "TFJob"
         metadata:
           name: {{workflow.parameters.job-name}}
@@ -126,12 +126,13 @@ spec:
               template:
                 spec:
                   serviceAccountName: tf-job-operator
+                  namespace: kubeflow # the namespace used to install all kubeflow components
                   containers:
                     - image: {{workflow.parameters.tf-model-image}}
                       name: tensorflow
                       imagePullPolicy: Always
                       args:                
-                        - "--how_many_training_steps=4000"
+                        - "--how_many_training_steps=100"
                         - "--bottleneck_dir=/tmp/bottlenecks"
                         - "--model_dir=/tmp/inception"
                         - "--summaries_dir={{inputs.parameters.s3-model-url}}training_summaries/baseline"

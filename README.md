@@ -111,58 +111,49 @@ We have modified the example to retrain inception v3 model to identify a particu
 
 ### Deploy Machine Learning Components to Kubernetes with Kubeflow
 
-* Install ksonnet version [0.9.2](https://ksonnet.io/#get-started).
+* Install ksonnet version [0.13.1](https://ksonnet.io/#get-started), or you can [Download a prebuilt bindary](https://github.com/ksonnet/ksonnet/releases/tag/v0.13.1) for your OS.
 * Install argo [CLI](https://github.com/argoproj/argo/blob/master/demo.md#1-download-argo)
 * Run the following commands to deploy Kubeflow components in your Kubernetes cluster:
 
+    NOTE: This demo has been updated to use kfctl.sh.
+
     ```bash
-    # Create a namespace for the kubeflow deployment
-    NAMESPACE=tfworkflow
-    kubectl create namespace ${NAMESPACE}
+    # download kubeflow
+    export KUBEFLOW_TAG=v0.4.1
+    TMPDIR=$(mktemp -d /tmp/tmp.kubeflow-repo-XXXXXX)
+    curl -L -o ${TMPDIR}/kubeflow.tar.gz https://github.com/kubeflow/kubeflow/archive/${KUBEFLOW_TAG}.tar.gz
+    tar -xzvf ${TMPDIR}/kubeflow.tar.gz -C ${TMPDIR}
+    KUBEFLOW_SOURCE=$(find ${TMPDIR} -maxdepth 1 -type d -name "kubeflow*")
+    echo $KUBEFLOW_SOURCE
+    cp -r ${KUBEFLOW_SOURCE}/kubeflow ./
+    cp -r ${KUBEFLOW_SOURCE}/scripts ./
+    cp -r ${KUBEFLOW_SOURCE}/deployment ./
 
-    # Kubeflow releases
-    # https://github.com/kubeflow/kubeflow/releases
-    VERSION=v0.2.2
+    # install ks
+    export KS_VER=0.13.1
+    export KS_PKG=ks_${KS_VER}_linux_amd64
+    wget -O /tmp/${KS_PKG}.tar.gz https://github.com/ksonnet/ksonnet/releases/download/v${KS_VER}/${KS_PKG}.tar.gz --no-check-certificate
+    mkdir -p ${HOME}/bin
+    tar -xvf /tmp/$KS_PKG.tar.gz -C ${HOME}/bin
+    echo "PATH=$PATH:${HOME}/bin/$KS_PKG" >> ~/.bashrc
+    source ~/.bashrc
 
-    # Initialize a ksonnet app. Set the namespace for it's default environment.
-    APP_NAME=my-kubeflow
-    ks init ${APP_NAME}
-    # If you are managing many clusters, run the following instead:
-    # CONTEXT=myk8scluster
-    # KUBEVERSION=v1.11.4
-    # ks init ${APP_NAME} --context $CONTEXT --api-spec=version:${KUBEVERSION}
-    cd ${APP_NAME}
-    ks env set default --namespace ${NAMESPACE}
+    # init kubeflow app
+    KFAPP=mykubeflowapp
+    ${KUBEFLOW_SOURCE}/scripts/kfctl.sh init ${KFAPP} --platform none
 
-    # Add a reference to Kubeflow's ksonnet manifests
-    ks registry add kubeflow github.com/kubeflow/kubeflow/tree/${VERSION}/kubeflow
+    # generate kubeflow app
+    cd ${KFAPP}
+    ${KUBEFLOW_SOURCE}/scripts/kfctl.sh generate k8s
 
-    # Install Kubeflow components
-    ks pkg install kubeflow/core@${VERSION}
-    ks pkg install kubeflow/tf-serving@${VERSION}
-    # Install Argo for workflow
-    ks pkg install kubeflow/argo
+    # apply kubeflow to cluster
+    ${KUBEFLOW_SOURCE}/scripts/kfctl.sh apply k8s
 
-    # Create template for core components
-    ks generate core kubeflow-core --name=kubeflow-core --namespace=${NAMESPACE}
-    # Create template for argo components
-    ks generate argo kubeflow-argo --name=kubeflow-argo --namespace=${NAMESPACE}
-
-    # Customize Kubeflow's installation for AKS or acs-engine
-    # ks param set kubeflow-core cloud aks
-    ks param set kubeflow-core cloud acsengine
-    # Customize jupyterhub's installation to create LoadBalancer service
-    ks param set kubeflow-core jupyterHubServiceType LoadBalancer
-
-    # Deploy Kubeflow
-    ks apply default -c kubeflow-core
-    # Deploy Argo
-    ks apply default -c kubeflow-argo
-
-    # Check status
-    kubectl get pods -n kubeflow
+    # view created components
+    kubectl get po -n kubeflow
+    kubectl get crd
+    kubectl get svc -n kubeflow
     ```
-    [![kubeflow](recordings/kubeflow.png)](https://www.youtube.com/watch?v=OQvO0pFaeEc)
 
 ### Persist Data and Logs With Azure Storage
 

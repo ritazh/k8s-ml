@@ -1,4 +1,4 @@
-apiVersion: kubeflow.org/v1alpha2
+apiVersion: kubeflow.org/v1beta1
 kind: TFJob
 metadata:
   name: tfjob-retrain-azfile
@@ -18,6 +18,7 @@ spec:
                 - "--output_graph=/tf-output/retrained_graph.pb"
                 - "--output_labels=/tf-output/retrained_labels.txt"
                 - "--saved_model_dir=/tf-output/saved_models/1"
+                - "--how_many_training_steps=500"
                 - "--image_dir=images"        
               resources:
                 limits:
