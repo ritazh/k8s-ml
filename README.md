@@ -112,6 +112,18 @@ We have modified the example to retrain inception v3 model to identify a particu
 ### Deploy Machine Learning Components to Kubernetes with Kubeflow
 
 * Install ksonnet version [0.13.1](https://ksonnet.io/#get-started), or you can [download a prebuilt binary](https://github.com/ksonnet/ksonnet/releases/tag/v0.13.1) for your OS.
+
+    ```bash
+    # install ks v0.13.1
+    export KS_VER=0.13.1
+    export KS_PKG=ks_${KS_VER}_linux_amd64
+    wget -O /tmp/${KS_PKG}.tar.gz https://github.com/ksonnet/ksonnet/releases/download/v${KS_VER}/${KS_PKG}.tar.gz --no-check-certificate
+    mkdir -p ${HOME}/bin
+    tar -xvf /tmp/$KS_PKG.tar.gz -C ${HOME}/bin
+    echo "PATH=$PATH:${HOME}/bin/$KS_PKG" >> ~/.bashrc
+    source ~/.bashrc
+    ```
+
 * Install argo [CLI](https://github.com/argoproj/argo/blob/master/demo.md#1-download-argo)
 * Run the following commands to deploy Kubeflow components in your Kubernetes cluster:
 
@@ -125,18 +137,6 @@ We have modified the example to retrain inception v3 model to identify a particu
     tar -xzvf ${TMPDIR}/kubeflow.tar.gz -C ${TMPDIR}
     KUBEFLOW_SOURCE=$(find ${TMPDIR} -maxdepth 1 -type d -name "kubeflow*")
     echo $KUBEFLOW_SOURCE
-    cp -r ${KUBEFLOW_SOURCE}/kubeflow ./
-    cp -r ${KUBEFLOW_SOURCE}/scripts ./
-    cp -r ${KUBEFLOW_SOURCE}/deployment ./
-
-    # install ks
-    export KS_VER=0.13.1
-    export KS_PKG=ks_${KS_VER}_linux_amd64
-    wget -O /tmp/${KS_PKG}.tar.gz https://github.com/ksonnet/ksonnet/releases/download/v${KS_VER}/${KS_PKG}.tar.gz --no-check-certificate
-    mkdir -p ${HOME}/bin
-    tar -xvf /tmp/$KS_PKG.tar.gz -C ${HOME}/bin
-    echo "PATH=$PATH:${HOME}/bin/$KS_PKG" >> ~/.bashrc
-    source ~/.bashrc
 
     # init kubeflow app
     KFAPP=mykubeflowapp
