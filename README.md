@@ -111,7 +111,7 @@ We have modified the example to retrain inception v3 model to identify a particu
 
 ### Deploy Machine Learning Components to Kubernetes with Kubeflow
 
-* Install ksonnet version [0.13.1](https://ksonnet.io/#get-started), or you can [Download a prebuilt bindary](https://github.com/ksonnet/ksonnet/releases/tag/v0.13.1) for your OS.
+* Install ksonnet version [0.13.1](https://ksonnet.io/#get-started), or you can [download a prebuilt binary](https://github.com/ksonnet/ksonnet/releases/tag/v0.13.1) for your OS.
 * Install argo [CLI](https://github.com/argoproj/argo/blob/master/demo.md#1-download-argo)
 * Run the following commands to deploy Kubeflow components in your Kubernetes cluster:
 
