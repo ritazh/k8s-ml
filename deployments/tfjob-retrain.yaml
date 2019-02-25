@@ -10,7 +10,7 @@ spec:
     requests:
       storage: 8Gi
 ---
-apiVersion: kubeflow.org/v1alpha2
+apiVersion: kubeflow.org/v1beta1
 kind: TFJob
 metadata:
   name: tfjob-retrain

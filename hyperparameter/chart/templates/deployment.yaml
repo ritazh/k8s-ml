@@ -11,7 +11,7 @@
 # This will result in create 1 TFJob for every pair of learning rate and train batch size
 {{- range $i, $lr := $lrlist }}
 {{- range $j, $batchsize := $batchsizelist }}
-apiVersion: kubeflow.org/v1alpha2
+apiVersion: kubeflow.org/v1beta1
 kind: TFJob # Each one of our trainings will be a separate TFJob
 metadata:
   name: tfjob-retrain-hyperparam-{{ $i }}-{{ $j }} # We give a unique name to each training
@@ -40,6 +40,7 @@ spec:
                 - "--output_labels=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/retrained_labels.txt"
                 - "--saved_model_dir=/tf-output/image-retraining-lr{{ $lr }}-bs-{{ $batchsize }}/saved_models/1"
                 - "--image_dir=images"
+                - "--how_many_training_steps=100"
                 - "--learning_rate"
                 - {{ $lr | quote }}
                 - "--train_batch_size"
@@ -57,15 +58,6 @@ spec:
               volumeMounts:
               - mountPath: /tf-output
                 name: azure-files
-          nodeSelector:
-            kubernetes.io/role: agent
-            beta.kubernetes.io/os: linux
-            type: virtual-kubelet
-          tolerations:
-          - key: virtual-kubelet.io/provider
-            operator: Exists
-          - key: azure.com/aci
-            effect: NoSchedule
           volumes:
             - name: azure-files
               azureFile:
