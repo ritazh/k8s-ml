@@ -131,13 +131,12 @@ We have modified the example to retrain inception v3 model to identify a particu
 
     ```bash
     # download kubeflow
-    export KUBEFLOW_TAG=v0.4.1
-    TMPDIR=$(mktemp -d /tmp/tmp.kubeflow-repo-XXXXXX)
-    curl -L -o ${TMPDIR}/kubeflow.tar.gz https://github.com/kubeflow/kubeflow/archive/${KUBEFLOW_TAG}.tar.gz
-    tar -xzvf ${TMPDIR}/kubeflow.tar.gz -C ${TMPDIR}
-    KUBEFLOW_SOURCE=$(find ${TMPDIR} -maxdepth 1 -type d -name "kubeflow*")
-    echo $KUBEFLOW_SOURCE
+    KUBEFLOW_SOURCE=kubeflow # directory to download the kubeflow source
+    mkdir ${KUBEFLOW_SOURCE}
+    cd ${KUBEFLOW_SOURCE}
 
+    export KUBEFLOW_TAG=v0.4.1 # tag corresponding to kubeflow version
+    curl https://raw.githubusercontent.com/kubeflow/kubeflow/${KUBEFLOW_TAG}/scripts/download.sh | bash
     # init kubeflow app
     KFAPP=mykubeflowapp
     ${KUBEFLOW_SOURCE}/scripts/kfctl.sh init ${KFAPP} --platform none
@@ -287,7 +286,8 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
 
 ### Creating End to End Pipelines with Argo
 
-* Deploy another storage option: Minio for S3 compatibility
+* [OPTIONAL] If you do not want to use the minio component deployed as part of Kubeflow. 
+Deploy your own Minio for S3 compatibility
     1. Update Minio deploy yaml with Azure storage account 
 
     ```yaml
@@ -306,14 +306,23 @@ This step requires Azure Files mount to be available. Please refer to the [Persi
     kubectl get service minio-service
     ```
 * Create a pipeline with Argo workflow
-    1. Set environment variables for Argo workflow
+    1. Set environment variables for Argo workflow (here we are using the minio shipped as part of Kubeflow)
 
     ```bash
-    export AZURE_STORAGEACCOUNT_NAME="PUT AZURE STORAGE ACCOUNT NAME HERE"
-    export AZURE_STORAGEACCOUNT_KEY="PUT AZURE STORAGE ACCOUNT KEY HERE"
-    MINIOIP=$(kubectl get svc minio-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    # namespace of all the kubeflow components
+    export NAMESPACE=kubeflow
+    # set to "minio" if using minio shipped as part of kubeflow
+    # set to "AZURE STORAGE ACCOUNT NAME" if minio is deployed as a proxy 
+    # to Azure storage account from the previous step
+    export AZURE_STORAGEACCOUNT_NAME=minio 
+    # set to "minio123" if using minio shipped as part of kubeflow
+    # set to "AZURE STORAGE ACCOUNT KEY" if minio is deployed as a proxy
+    # to Azure storage account from the previous step
+    export AZURE_STORAGEACCOUNT_KEY=minio123
+    MINIOIP=$(kubectl get svc minio-service -n ${NAMESPACE} -o jsonpath='{.spec.clusterIP}')
+    MINIOPORT=$(kubectl get svc minio-service -n ${NAMESPACE} -o jsonpath='{.spec.ports[0].port}')
 
-    export S3_ENDPOINT=${MINIOIP}:9012
+    export S3_ENDPOINT=${MINIOIP}:$MINIOPORT
     export AWS_ENDPOINT_URL=${S3_ENDPOINT}
     export AWS_ACCESS_KEY_ID=$AZURE_STORAGEACCOUNT_NAME
     export AWS_SECRET_ACCESS_KEY=$AZURE_STORAGEACCOUNT_KEY
