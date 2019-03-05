@@ -28,12 +28,8 @@
         }
       },
       "servicePrincipalProfile": {
-          "clientId": "",
-          "keyvaultSecretRef": {
-              "vaultID": "",
-              "secretName": "",
-              "version": ""
-          }
+        "clientId": "",
+        "secret": ""
       }
     }
   }
