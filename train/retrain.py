@@ -942,6 +942,8 @@ def main(_):
     f.write('\n'.join(image_lists.keys()) + '\n')
 
   export_model(sess, image_lists.keys(), FLAGS.architecture, FLAGS.saved_model_dir)
+  with open("/model_name.txt", "w") as f:
+    f.write("inception")
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
